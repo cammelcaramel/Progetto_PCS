@@ -7,10 +7,12 @@
 
 using namespace testing;
 
-TEST(TestEmpty, TestEmpty)
+TEST(TestSorting, TestMergeSort)
 {
-  ProjectLibrary::Empty empty;
-  ASSERT_NO_THROW(empty.Show());
+  std::vector<int> v = {44, 25, 10, 31, 25, 48, 37, 43, 18, 48, 27};
+  ProjectLibrary::MergeSort<int>(v, 0, v.size()-1);
+  std::vector<int> sortedV = {48,48,44,43,37,31,27,25,25,18,10};
+  EXPECT_EQ(v, sortedV);
 }
 
 #endif // __TEST_EMPTY_H
