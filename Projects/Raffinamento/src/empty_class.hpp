@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <chrono>
 
 using namespace std;
 
@@ -15,236 +16,134 @@ namespace ProjectLibrary
     public:
     double x; // ascissa
     double y; // ordinata
-    unsigned int id;
-    unsigned int marker;
 
-    Point(){x=0;y=0;id=0;marker=0;} // Costruttore Vuoto
-
-    Point(double x,
-          double y,
-          unsigned int id,
-          unsigned int marker): x(x),y(y),id(id),marker(marker){}
-
-    Point(const Point& punto): x(punto.x),y(punto.y),id(punto.id),marker(punto.marker){}
-
-    Point& operator=(const Point& punto) {
-      if (this != &punto) {
-        // Copia i valori dei membri
-        x = punto.x;
-        y = punto.y;
-        id = punto.id;
-        marker = punto.marker;
-      }
-      return *this;
-    }
+    Point(double& x_,
+          double& y_){x=x_;y=y_;}
   };
 
   class Segment{
     public:
-    Point punto1;
-    Point punto2;
-    unsigned int id;
-    unsigned int marker;
+    int punto1;
+    int punto2;
     double lunghezza;
-    static constexpr double TolleranzaLineare = 1.0e-12;
+    int p1m = -1; // Puntatore al segmento da p1 a pmedio
+    int mp2 = -1; // Puntatore al segmento da pmedio a p2
+    int pm = -1; // Puntatore al punto medio
+    int cella1 = -1; // Prima Cella Adiacente
+    int cella2 = -1; // Seconda Cella Adiacente
 
-    Segment(Point& punto1,
-            Point& punto2,
-            unsigned int& id,
-            unsigned int& marker): punto1(punto1),punto2(punto2),id(id),marker(marker),lunghezza(sqrt((abs(punto1.x-punto2.x))*(abs(punto1.x-punto2.x))+(abs(punto1.y-punto2.y))*(abs(punto1.y-punto2.y)))){}
-
-    Segment(Point& punto1_,
-            Point& punto2_,
-            unsigned int& id_){ punto1=punto1_;
+    Segment(int& punto1_,
+            int& punto2_,
+            std::vector<Point>& univpunti){ punto1=punto1_;
                                 punto2=punto2_;
-                                id=id_;
-                                if(punto1_.marker==punto2_.marker){marker=punto1_.marker;}
-                                   else{marker=0;}
-                                lunghezza =sqrt((abs(punto1_.x-punto2_.x))*(abs(punto1_.x-punto2_.x))+(abs(punto1_.y-punto2_.y))*(abs(punto1_.y-punto2_.y)));
-    }
-
-    Segment(const Segment& lato){punto1=lato.punto1;punto2=lato.punto2;id=lato.id;marker=lato.marker;lunghezza=lato.lunghezza;}
-
-    Segment(){
-        Point punto1;
-        Point punto2;
-        id = 0;
-        marker = 0;
-        lunghezza = 0;
-    }
-
-    Segment& operator=(const Segment& lato) {
-      if (this != &lato) {
-        // Copia i valori dei membri
-        punto1 = lato.punto1;
-        punto2 = lato.punto2;
-        id = lato.id;
-        marker = lato.marker;
-        lunghezza = lato.lunghezza;
-      }
-      return *this;
-    }
+                                lunghezza =sqrt((abs(univpunti[punto1_].x-univpunti[punto2_].x))*(abs(univpunti[punto1_].x-univpunti[punto2_].x))+(abs(univpunti[punto1_].y-univpunti[punto2_].y))*(abs(univpunti[punto1_].y-univpunti[punto2_].y)));}
 
     friend bool operator>(const Segment& lato1, const Segment& lato2) {
-        return lato1.lunghezza > lato2.lunghezza + TolleranzaLineare;
+        return (lato1.lunghezza - lato2.lunghezza > 0.0);
       }
-
   };
 
   class Cell{
     public:
-    unsigned int id;
-    vector<Point> punti;
-    vector<Segment> lati;
-    vector<Cell*> adiac;
+    vector<int> punti; // essendo vettori potrebbero essere un problema
+    vector<int> lati;
     double area;
-    static constexpr double TolleranzaQuadratica = numeric_limits<double>::epsilon();
+    bool flag; // Ausiliario per distruggere celle
 
-    Cell(Point& punto1,Point& punto2,Point& punto3, Segment& lato1, Segment& lato2, Segment& lato3,
-         unsigned int& id_){
+    Cell(int& punto1,int& punto2,int& punto3,int& lato1,int& lato2,int& lato3,
+         std::vector<Point>& upunti){
         punti.push_back(punto1);
         punti.push_back(punto2);
         punti.push_back(punto3);
         lati.push_back(lato1);
         lati.push_back(lato2);
         lati.push_back(lato3);
-        id=id_;
-        area= abs((punto3.x-punto1.x)*(punto2.y-punto1.y)-(punto3.y-punto1.y)*(punto2.x-punto1.x));
-        Cell* adiac1 = nullptr; Cell* adiac2 = nullptr; Cell* adiac3 = nullptr;
-        adiac.push_back(adiac1); adiac.push_back(adiac2); adiac.push_back(adiac3);
+        flag = true;
+        area= 0.5*abs(upunti[punto1].x*(upunti[punto2].y-upunti[punto3].y) + upunti[punto2].x*(upunti[punto3].y-upunti[punto1].y) + upunti[punto3].x*(upunti[punto1].y-upunti[punto2].y));
     }
-
-    Cell(const Cell& cella){id=cella.id;punti=cella.punti;lati=cella.lati;adiac=cella.adiac;area=cella.area;} // Costruttore Copia
-
-    Cell(){id = 0;
-          Point punto1; Segment lato1; Cell* adiac1 = nullptr;
-          Point punto2; Segment lato2; Cell* adiac2 = nullptr;
-          Point punto3; Segment lato3; Cell* adiac3 = nullptr; area = 0;
-          punti.push_back(punto1); lati.push_back(lato1); adiac.push_back(adiac1);
-          punti.push_back(punto2); lati.push_back(lato2); adiac.push_back(adiac2);
-          punti.push_back(punto3); lati.push_back(lato3); adiac.push_back(adiac3);}
-
-    Cell& operator=(const Cell& cella) {
-      if (this != &cella) {
-        // Copia i valori dei membri
-        punti = cella.punti;
-        lati = cella.lati;
-        id = cella.id;
-        adiac = cella.adiac;
-        area = cella.area;
-      }
-      return *this;
-    }
-
-    friend bool operator>(const Cell& cell1, const Cell& cell2) {
-        return cell1.area > cell2.area + TolleranzaQuadratica;
-      }
-
     };
 
-  // Dati due lati trova vertice comune (Dando per scontato che lo abbiano)
-  Point* VerticeComune(Segment& lato1,Segment& lato2);
-
-  // Adiacenza (Meglio Lista di vettori) -> True se le celle sono adiacenti
-  bool Adiacenti(Cell& cella1, Cell& cella2);
-
-  // Data una cella e il vettore delle celle esistenti, riempie i suoi puntatori con le relative celle adiacenti
-  void RiempiAdiacenti(Cell& cella, std::vector<Cell>& vettcelle);
-
-  // Dato ID trova punto dentro un dato vettore di punti
-  Point* TrovaPunto(std::vector<Point>& punti,unsigned int& id);
-
-  // Metodo: Dato lato trovare vertice opposto
-  Point* VerticeOpposto(Cell& cella, Segment& lato);
-
-  // Metodo: Trovare metà del segmento
-  Point PuntoMedio(Segment& segment,unsigned int new_id);
-
   // Metodo: Trova lato più lungo
-  Segment* LatoMaggiore(Cell& cella);
-
-  // Importa punti da file CSV in vettore di punti
-  std::vector<Point> ImportPoints(std::string nomefile);
-
-  // Importa segmenti da file CSV in vettore di segmenti
-  std::vector<Segment> ImportSegments(std::string nomefile, std::vector<Point>& punti);
-
-  // Importa celle da file CSV in vettore di celle
-  std::vector<Cell> ImportCells(std::string nomefile, std::vector<Point>& punti, std::vector<Segment>& lati);
-
-  // Crea ID per Punto ricavato da due punti
-  unsigned int PointIDGenerator(Point& punto1, Point& punto2);
-
-  // Crea ID per Segmento ricavato da due punti
-  unsigned int SegmentIDGenerator(Point& punto1, Point& punto2);
-
-  // Crea ID per Celle ricavate da una Cella separata da un segmento
-  std::vector<unsigned int> CellIDGenerator(Cell& cella, Segment& lato);
-
-  // Restituisce puntatore a Cella adiacente sul lato di input con la Cella di input
-  Cell* AdiacentiConLato(Cell& cella, Segment& lato, vector<Cell> triangoli);
-
-  // Dato un segmento restituisce i due segmenti in cui viene diviso dal punto medio
-  std::vector<Segment> DividiLato(Segment& lato,unsigned int& new_index1,unsigned int& new_index2, Point& pmedio);
-
-  // Merge per Area Celle
-  template <typename T>
-    void Merge(std::vector<T>& v,
-               const unsigned int& sx,
-               const unsigned int& cx,
-               const unsigned int& dx){
-  unsigned int i = sx; // Indice iterativo primo vettore (v fino a cx)
-  unsigned int j = cx+1; // Indice iterativo secondo vettore (v dopo cx)
-  unsigned int k = 0; // Indice vettore ordinato (ausiliario 'w')
-  std::vector<T> w; // Vettore ausiliario in cui salvo elementi ordinati
-  while ((i<=cx)&&(j<=dx)){
-      if (v[i]>v[j]){
-          w.push_back(v[i]); i=i+1;
-      }else{
-          w.push_back(v[j]); j=j+1;
+  inline int LatoMaggiore(Cell& cella, std::vector<Segment>& univlati) {
+      if (univlati[cella.lati[0]] > univlati[cella.lati[1]] && univlati[cella.lati[0]] > univlati[cella.lati[2]]) {
+          int lm = cella.lati[0];
+          return lm;
       }
-      k=k+1;
-    }
-  for (;i<=cx;i=i+1,k=k+1)w.push_back(v[i]); // Svuoto primo vettore
-  for (;j<=dx;j=j+1,k=k+1)w.push_back(v[j]); // Svuoto secondo vettore
-  for (i=sx;i<=dx;i=i+1) v[i] = w[i-sx]; // Ricopio da vettore ausiliario a originale
-    }
-
-    template <typename T>
-    void MergeSort(std::vector<T>& v,const unsigned int& sx,const unsigned int& dx){
-  if (sx < dx){
-        unsigned int c = (sx+dx)/2;
-        MergeSort(v,sx,c);
-        MergeSort(v,c+1,dx);
-        Merge(v,sx,c,dx);
-    }
-    }
-
- template <typename T>
-  unsigned int MaxID(vector<T> vettore){
-    unsigned int max = 0;
-    for(unsigned int i=0;i<vettore.size();i++){
-    if (vettore[i].id>max){max=vettore[i].id;}
-    }
-    return max;
+      else if (univlati[cella.lati[1]] > univlati[cella.lati[2]]) {
+          int lm = cella.lati[1];
+          return lm;
+      }
+      else {
+          int lm = cella.lati[2];
+          return lm;
+      }
   }
 
-  template <typename T>
-   T* Max_Geom(vector<T> vettore){
-     T* max;
-     for(unsigned int i=0;i<vettore.size();i++){
-     if (vettore[i]>max){max=&vettore[i];}
-     }
-     return max;
-   }
+  inline void PuntoMedio(Segment& lato,std::vector<Point>& punti){
+      double x_med=(punti[lato.punto1].x+punti[lato.punto2].x)*0.5;
+      double y_med=(punti[lato.punto1].y+punti[lato.punto2].y)*0.5;
+      // crea nuovo punto
+      punti.push_back(Point(x_med,y_med));
+      ;}
 
-  void DividiCella(Cell& cella,
-                   Segment& lato,
-                   vector<Cell>& triangoli,
-                   vector<Segment>& lati,
-                   vector<Point>& punti,
-                   unsigned int& maxIDP,
-                   unsigned int& maxIDS,
-                   unsigned int& maxIDC);
+  // Metodo: Dato lato trovare vertice opposto
+  inline int VerticeOpposto(Cell& cella,Segment& lato){
+      int i = 0;
+      int punto = cella.punti[i];
+      while(punto==lato.punto1 || punto==lato.punto2){
+          i = i +1;
+          punto = cella.punti[i];
+      }
+      return punto;
+  }
+
+  // Trova puntatore a vertice comune tra due lati, dando per scontato che ci sia
+  inline int VerticeComune(Segment& lato1,Segment& lato2){
+    int punto;
+    if (lato1.punto1==lato2.punto1){
+        punto=lato1.punto1;
+    }
+    else if (lato1.punto1==lato2.punto2){
+        punto=lato1.punto1;
+    }
+    else{
+        punto=lato1.punto2;
+    }
+    return punto;
+  }
+
+  // Importa punti da file CSV in vettore di punti
+  void ImportPoints(string nomefile, std::vector<Point>& punti);
+
+  // Importa segmenti da file CSV in vettore di segmenti
+  void ImportSegments(string nomefile, std::vector<Point>& punti, std::vector<Segment>& lati);
+
+  // Importa celle da file CSV in vettore di celle
+  void ImportCells(string nomefile,std::vector<Point>& punti, std::vector<Segment>& lati, std::vector<Cell>& celle);
+
+  // Divide cella dimezzando lato, se poi lato non è il lato maggiore
+  // divide ancora creando un lato tra il punto medio di lato e del lato maggiore
+  void DividiCella(int& cella,
+                   int& lato,
+                   std::vector<Cell> &triangoli,
+                   std::vector<Segment>& lati,
+                   std::vector<Point> &punti,
+                   int& maxIDP,
+                   int& maxIDS,
+                   int& maxIDC);
+
+  // data una cella e un lato, divide questa e poi quella adiacente al lato
+  // dimezzato, a cascata fino a che non raggiunge il bordo della mesh
+  // oppure la divisione della cella non crea inammissibilità nella mesh
+  void RaffinaCella(int& cella,
+                    int& lato,
+                    std::vector<Cell>& triangoli,
+                    std::vector<Segment>& lati,
+                    std::vector<Point>& punti,
+                    int& maxIDP,
+                    int& maxIDS,
+                    int& maxIDC);
+
+  int MaxCelle(vector<Cell>& triangoli);
 }
 #endif // __EMPTY_H

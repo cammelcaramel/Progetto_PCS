@@ -1,0 +1,8 @@
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/CMakeFiles/raffinamento_test.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/CMakeFiles/raffinamento_program.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/CMakeFiles/edit_cache.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/CMakeFiles/rebuild_cache.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/src/CMakeFiles/edit_cache.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/src/CMakeFiles/rebuild_cache.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/test/CMakeFiles/edit_cache.dir
+C:/Users/enric/Desktop/progetto_PCS/Projects/build-Raffinamento-Desktop-Release/test/CMakeFiles/rebuild_cache.dir
